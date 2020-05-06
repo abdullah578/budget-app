@@ -1,4 +1,37 @@
 var dataModule = (function () {
+    var Expense = function (description, value, id) {
+        this.description = description;
+        this.value = value;
+        this.id = id;
+    };
+    var Income = function (description, value, id) {
+        this.description = description;
+        this.value = value;
+        this.id = id;
+    }
+    var userData = {
+        items: {
+            exp: [],
+            inc: []
+        },
+        totals: {
+            exp: 0,
+            inc: 0
+        }
+    }
+    return {
+        addItem: function (type, desc, val) {
+            var newItem, ID;
+            ID = userData.items[type].length === 0 ? 0 : userData.items[type][userData.items[type].length - 1].id + 1;
+            if (type == "exp") {
+                newItem = new Expense(desc, val, ID);
+            } else {
+                newItem = new Income(desc, val, ID);
+            }
+            userData.items[type].push(newItem);
+            return newItem;
+        }
+    };
 
 })();
 
@@ -22,13 +55,15 @@ var UImodule = (function () {
 
 var controller = (function (dataMod, UImod) {
     var action = function () {
-        var userInput = UImod.getInputData();
+        var userInput, newItem;
+        userInput = UImod.getInputData();
+        newItem = dataMod.addItem(userInput.type, userInput.description, userInput.value);
     }
 
     var events = function () {
         document.querySelector(".add__btn").addEventListener('click', action);
         document.addEventListener('keypress', function (e) {
-            if (e.keyCode === 1) {
+            if (e.keyCode === 13) {
                 action();
             }
 
