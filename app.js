@@ -39,7 +39,9 @@ var UImodule = (function () {
     var DOMclasses = {
         inputType: ".add__type",
         inputDesc: ".add__description",
-        inputVal: ".add__value"
+        inputVal: ".add__value",
+        exp: ".expenses__list",
+        inc: ".income__list"
     };
     return {
         getInputData: function () {
@@ -49,6 +51,20 @@ var UImodule = (function () {
                 value: document.querySelector(DOMclasses.inputVal).value
 
             };
+        },
+        addToUI: function (obj, type) {
+            var htmlString, newHTML;
+            if (type == "inc") {
+                htmlString = '<div class="item clearfix" id="income-%id%"> <div class="item__description">%description%</div> <div class="right clearfix"> <div class="item__value">%value%</div> <div class="item__delete"> <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div> </div> </div>';
+            }
+            else {
+                htmlString = '<div class="item clearfix" id="expense-%id%"> <div class="item__description">%description%</div> <div class="right clearfix"> <div class="item__value">%value%</div> <div class="item__percentage">21%</div> <div class="item__delete">  <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div> </div> </div>'
+            }
+            newHTML = htmlString.replace('%id%', obj.id);
+            newHTML = newHTML.replace('%description%', obj.description);
+            newHTML = newHTML.replace('%value%', obj.value);
+            document.querySelector(DOMclasses[type]).insertAdjacentHTML("beforeend", newHTML);
+
         }
     }
 })();
@@ -58,6 +74,7 @@ var controller = (function (dataMod, UImod) {
         var userInput, newItem;
         userInput = UImod.getInputData();
         newItem = dataMod.addItem(userInput.type, userInput.description, userInput.value);
+        UImod.addToUI(newItem, userInput.type);
     }
 
     var events = function () {
