@@ -93,8 +93,21 @@ var UImodule = (function () {
         budgetExpense: ".budget__expenses--value",
         budgetExpensePercentage: ".budget__expenses--percentage",
         budgetValue: ".budget__value",
-        percentages: ".item__percentage"
+        percentages: ".item__percentage",
+        month: ".budget__title--month"
     };
+    var formatNumbers = function (num, type) {
+        var int, dec, sign;
+        num = num.toFixed(2);
+        num = num.toString();
+        int = num.split(".")[0];
+        dec = num.split(".")[1];
+        if (int.length > 3) {
+            int = int.substr(0, int.length - 3) + "," + int.substr(int.length - 3, 3);
+        }
+        sign = type === "inc" ? "+" : "-";
+        return sign + " " + int + "." + dec
+    }
     return {
         getInputData: function () {
             return {
@@ -114,7 +127,7 @@ var UImodule = (function () {
             }
             newHTML = htmlString.replace('%id%', obj.id);
             newHTML = newHTML.replace('%description%', obj.description);
-            newHTML = newHTML.replace('%value%', obj.value);
+            newHTML = newHTML.replace('%value%', formatNumbers(obj.value, type));
             document.querySelector(DOMclasses[type]).insertAdjacentHTML("beforeend", newHTML);
 
         },
@@ -132,10 +145,12 @@ var UImodule = (function () {
             inputArray[0].focus();
         },
         displayBudget: function (obj) {
-            document.querySelector(DOMclasses.budgetIncome).textContent = obj.total.inc;
-            document.querySelector(DOMclasses.budgetExpense).textContent = obj.total.exp;
+            var budgetType;
+            budgetType = obj.budget >= 0 ? "inc" : "exp";
+            document.querySelector(DOMclasses.budgetIncome).textContent = formatNumbers(obj.total.inc, "inc");
+            document.querySelector(DOMclasses.budgetExpense).textContent = formatNumbers(obj.total.exp, "exp");
             document.querySelector(DOMclasses.budgetExpensePercentage).textContent = obj.percentage > 0 ? obj.percentage + "%" : "-";
-            document.querySelector(DOMclasses.budgetValue).textContent = obj.budget;
+            document.querySelector(DOMclasses.budgetValue).textContent = formatNumbers(obj.budget, budgetType);
         },
         displayPercentages: function (perc) {
             var inputItems, inputArray;
@@ -144,6 +159,14 @@ var UImodule = (function () {
             inputArray.forEach(function (elem, index) {
                 elem.textContent = perc[index] >= 0 ? perc[index] + "%" : "-";
             });
+        },
+        displayDate: function () {
+            var now, currentYear, currentMonth;
+            var monthArray = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            now = new Date();
+            currentYear = now.getFullYear();
+            currentMonth = now.getMonth();
+            document.querySelector(DOMclasses.month).textContent = monthArray[currentMonth] + " " + currentYear;
         }
     }
 })();
@@ -198,6 +221,7 @@ var controller = (function (dataMod, UImod) {
     return {
         init: function () {
             events();
+            UImod.displayDate();
         }
     }
 
