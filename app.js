@@ -9,6 +9,14 @@ var dataModule = (function () {
         this.value = value;
         this.id = id;
     }
+    var calculateTotals = function (type) {
+        var sum = 0;
+        userData.items[type].forEach(function (curr) {
+            sum += curr.value;
+        });
+        userData.totals[type] = sum;
+
+    }
     var userData = {
         items: {
             exp: [],
@@ -17,7 +25,9 @@ var dataModule = (function () {
         totals: {
             exp: 0,
             inc: 0
-        }
+        },
+        budget: 0,
+        percentage: -1
     }
     return {
         addItem: function (type, desc, val) {
@@ -30,7 +40,21 @@ var dataModule = (function () {
             }
             userData.items[type].push(newItem);
             return newItem;
+        },
+        calculateBudget: function () {
+            calculateTotals("inc");
+            calculateTotals("exp");
+            userData.budget = userData.totals.inc - userData.totals.exp;
+            userData.percentage = userData.totals.inc > 0 ? Math.round((userData.totals.exp / userData.totals.inc) * 100) : -1;
+        },
+        getBudget: function () {
+            return {
+                budget: userData.budget,
+                percentage: userData.percentage,
+                total: userData.totals
+            }
         }
+
     };
 
 })();
@@ -41,14 +65,18 @@ var UImodule = (function () {
         inputDesc: ".add__description",
         inputVal: ".add__value",
         exp: ".expenses__list",
-        inc: ".income__list"
+        inc: ".income__list",
+        budgetIncome: ".budget__income--value",
+        budgetExpense: ".budget__expenses--value",
+        budgetExpensePercentage: ".budget__expenses--percentage",
+        budgetValue: ".budget__value"
     };
     return {
         getInputData: function () {
             return {
                 type: document.querySelector(DOMclasses.inputType).value,
                 description: document.querySelector(DOMclasses.inputDesc).value,
-                value: document.querySelector(DOMclasses.inputVal).value
+                value: parseFloat(document.querySelector(DOMclasses.inputVal).value)
 
             };
         },
@@ -73,17 +101,29 @@ var UImodule = (function () {
             inputArray.forEach(function (current, i, arr) {
                 current.value = "";
             });
+            inputArray[0].focus();
+        },
+        displayBudget: function (obj) {
+            document.querySelector(DOMclasses.budgetIncome).textContent = obj.total.inc;
+            document.querySelector(DOMclasses.budgetExpense).textContent = obj.total.exp;
+            document.querySelector(DOMclasses.budgetExpensePercentage).textContent = obj.percentage > 0 ? obj.percentage + "%" : "-";
+            document.querySelector(DOMclasses.budgetValue).textContent = obj.budget;
         }
     }
 })();
 
 var controller = (function (dataMod, UImod) {
     var action = function () {
-        var userInput, newItem;
+        var userInput, newItem, budgetObj;
         userInput = UImod.getInputData();
-        newItem = dataMod.addItem(userInput.type, userInput.description, userInput.value);
-        UImod.addToUI(newItem, userInput.type);
-        UImod.emptyFields();
+        if (userInput.description !== "" && !isNaN(userInput.value) && userInput.value > 0) {
+            newItem = dataMod.addItem(userInput.type, userInput.description, userInput.value);
+            UImod.addToUI(newItem, userInput.type);
+            UImod.emptyFields();
+            dataMod.calculateBudget();
+            budgetObj = dataMod.getBudget();
+            UImod.displayBudget(budgetObj);
+        }
     }
 
     var events = function () {
