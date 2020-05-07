@@ -41,6 +41,11 @@ var dataModule = (function () {
             userData.items[type].push(newItem);
             return newItem;
         },
+        removeItem: function (type, ID) {
+            userData.items[type] = userData.items[type].filter(function (curr) {
+                return curr.id !== ID;
+            });
+        },
         calculateBudget: function () {
             calculateTotals("inc");
             calculateTotals("exp");
@@ -83,16 +88,20 @@ var UImodule = (function () {
         addToUI: function (obj, type) {
             var htmlString, newHTML;
             if (type == "inc") {
-                htmlString = '<div class="item clearfix" id="income-%id%"> <div class="item__description">%description%</div> <div class="right clearfix"> <div class="item__value">%value%</div> <div class="item__delete"> <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div> </div> </div>';
+                htmlString = '<div class="item clearfix" id="inc-%id%"> <div class="item__description">%description%</div> <div class="right clearfix"> <div class="item__value">%value%</div> <div class="item__delete"> <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div> </div> </div>';
             }
             else {
-                htmlString = '<div class="item clearfix" id="expense-%id%"> <div class="item__description">%description%</div> <div class="right clearfix"> <div class="item__value">%value%</div> <div class="item__percentage">21%</div> <div class="item__delete">  <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div> </div> </div>'
+                htmlString = '<div class="item clearfix" id="exp-%id%"> <div class="item__description">%description%</div> <div class="right clearfix"> <div class="item__value">%value%</div> <div class="item__percentage">21%</div> <div class="item__delete">  <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div> </div> </div>'
             }
             newHTML = htmlString.replace('%id%', obj.id);
             newHTML = newHTML.replace('%description%', obj.description);
             newHTML = newHTML.replace('%value%', obj.value);
             document.querySelector(DOMclasses[type]).insertAdjacentHTML("beforeend", newHTML);
 
+        },
+        deleteFromUI: function (selectorID) {
+            var deleteElem = document.getElementById(selectorID);
+            deleteElem.parentNode.removeChild(deleteElem);
         },
         emptyFields: function () {
             var inputItems, inputArray;
@@ -111,19 +120,34 @@ var UImodule = (function () {
         }
     }
 })();
+var updateBudget = function (dataMod, UImod) {
+    var budgetObj;
+    dataMod.calculateBudget();
+    budgetObj = dataMod.getBudget();
+    UImod.displayBudget(budgetObj);
+};
 
 var controller = (function (dataMod, UImod) {
     var action = function () {
-        var userInput, newItem, budgetObj;
+        var userInput, newItem;
         userInput = UImod.getInputData();
         if (userInput.description !== "" && !isNaN(userInput.value) && userInput.value > 0) {
             newItem = dataMod.addItem(userInput.type, userInput.description, userInput.value);
             UImod.addToUI(newItem, userInput.type);
             UImod.emptyFields();
-            dataMod.calculateBudget();
-            budgetObj = dataMod.getBudget();
-            UImod.displayBudget(budgetObj);
+            updateBudget(dataMod, UImod);
         }
+    }
+    var deleteItem = function (e) {
+        var itemID, type, ID;
+        itemID = e.target.parentNode.parentNode.parentNode.parentNode.id;
+        if (itemID) {
+            type = itemID.split("-")[0];
+            ID = parseInt(itemID.split("-")[1]);
+        }
+        dataMod.removeItem(type, ID);
+        UImod.deleteFromUI(itemID);
+        updateBudget(dataMod, UImod);
     }
 
     var events = function () {
@@ -134,6 +158,7 @@ var controller = (function (dataMod, UImod) {
             }
 
         })
+        document.querySelector(".container").addEventListener("click", deleteItem);
     }
     return {
         init: function () {
