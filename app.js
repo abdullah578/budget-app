@@ -1,4 +1,5 @@
 var dataModule = (function () {
+    //function constructors to create the income and expense objects
     var Expense = function (description, value, id) {
         this.description = description;
         this.value = value;
@@ -14,6 +15,7 @@ var dataModule = (function () {
         this.value = value;
         this.id = id;
     }
+    // calculates the total income and the total expenses
     var calculateTotals = function (type) {
         var sum = 0;
         userData.items[type].forEach(function (curr) {
@@ -22,6 +24,7 @@ var dataModule = (function () {
         userData.totals[type] = sum;
 
     }
+    // used to hold the data structures
     var userData = {
         items: {
             exp: [],
@@ -35,6 +38,7 @@ var dataModule = (function () {
         percentage: -1
     }
     return {
+        //adds item to the data structure
         addItem: function (type, desc, val) {
             var newItem, ID;
             ID = userData.items[type].length === 0 ? 0 : userData.items[type][userData.items[type].length - 1].id + 1;
@@ -46,22 +50,26 @@ var dataModule = (function () {
             userData.items[type].push(newItem);
             return newItem;
         },
+        // removes item from data structure
         removeItem: function (type, ID) {
             userData.items[type] = userData.items[type].filter(function (curr) {
                 return curr.id !== ID;
             });
         },
+        //calculates the budget
         calculateBudget: function () {
             calculateTotals("inc");
             calculateTotals("exp");
             userData.budget = userData.totals.inc - userData.totals.exp;
             userData.percentage = userData.totals.inc > 0 ? Math.round((userData.totals.exp / userData.totals.inc) * 100) : -1;
         },
+        //calculates the expense percentages
         calculatePercentages: function () {
             userData.items.exp.forEach(function (curr) {
                 curr.calcPercentage(userData.totals.inc);
             });
         },
+        //return the budget
         getBudget: function () {
             return {
                 budget: userData.budget,
@@ -69,6 +77,7 @@ var dataModule = (function () {
                 total: userData.totals
             }
         },
+        //returns the expense percentages
         getPercentages: function () {
             var percentageArray;
             percentageArray = userData.items.exp.map(function (curr) {
@@ -83,6 +92,7 @@ var dataModule = (function () {
 })();
 
 var UImodule = (function () {
+    //holds the required  DOM css selectors 
     var DOMclasses = {
         inputType: ".add__type",
         inputDesc: ".add__description",
@@ -97,8 +107,10 @@ var UImodule = (function () {
         percentages: ".item__percentage",
         month: ".budget__title--month"
     };
+    // display numbers with two decimal points and with the appropiate sign
     var formatNumbers = function (num, type) {
         var int, dec, sign;
+        num = Math.abs(num);
         num = num.toFixed(2);
         num = num.toString();
         int = num.split(".")[0];
@@ -110,6 +122,7 @@ var UImodule = (function () {
         return sign + " " + int + "." + dec
     }
     return {
+        // acquire data from the input fields
         getInputData: function () {
             return {
                 type: document.querySelector(DOMclasses.inputType).value,
@@ -118,6 +131,7 @@ var UImodule = (function () {
 
             };
         },
+        // dislay the income/expense in the user interface
         addToUI: function (obj, type) {
             var htmlString, newHTML;
             if (type == "inc") {
@@ -132,10 +146,12 @@ var UImodule = (function () {
             document.querySelector(DOMclasses[type]).insertAdjacentHTML("beforeend", newHTML);
 
         },
+        //remove the expense/budget from the user interface
         deleteFromUI: function (selectorID) {
             var deleteElem = document.getElementById(selectorID);
             deleteElem.parentNode.removeChild(deleteElem);
         },
+        //clear out the empty fields
         emptyFields: function () {
             var inputItems, inputArray;
             inputItems = document.querySelectorAll(DOMclasses.inputVal + "," + DOMclasses.inputDesc);
@@ -161,6 +177,7 @@ var UImodule = (function () {
                 elem.textContent = perc[index] >= 0 ? perc[index] + "%" : "-";
             });
         },
+        //display the month and year on the user interface
         displayDate: function () {
             var now, currentYear, currentMonth;
             var monthArray = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -169,6 +186,7 @@ var UImodule = (function () {
             currentMonth = now.getMonth();
             document.querySelector(DOMclasses.month).textContent = monthArray[currentMonth] + " " + currentYear;
         },
+        //chage outline to red for expenses
         changeFocus: function () {
             var inputItems, inputArray;
             inputItems = document.querySelectorAll(DOMclasses.inputVal + "," + DOMclasses.inputDesc + "," + DOMclasses.inputType);
@@ -176,7 +194,7 @@ var UImodule = (function () {
             inputArray.forEach(function (curr) {
                 curr.classList.toggle("red-focus");
             });
-            document.querySelector(DOMclasses.inputBtn).classList.add("red");
+            document.querySelector(DOMclasses.inputBtn).classList.toggle("red");
         }
     }
 })();
@@ -196,11 +214,16 @@ var controller = (function (dataMod, UImod) {
     }
     var addItem = function () {
         var userInput, newItem;
+        // get item from the input fields
         userInput = UImod.getInputData();
         if (userInput.description !== "" && !isNaN(userInput.value) && userInput.value > 0) {
+            //add item to data structure
             newItem = dataMod.addItem(userInput.type, userInput.description, userInput.value);
+            //add item to the user interface
             UImod.addToUI(newItem, userInput.type);
+            // empty the input fields
             UImod.emptyFields();
+            //update the budget and percentages
             updateBudget(dataMod, UImod);
             updatePercentages(dataMod, UImod);
         }
@@ -211,14 +234,18 @@ var controller = (function (dataMod, UImod) {
         if (itemID) {
             type = itemID.split("-")[0];
             ID = parseInt(itemID.split("-")[1]);
+            //delete item from data structure
+            dataMod.removeItem(type, ID);
+            //delete item from user interface
+            UImod.deleteFromUI(itemID);
+            //update budget and percentages
+            updateBudget(dataMod, UImod);
+            updatePercentages(dataMod, UImod);
         }
-        dataMod.removeItem(type, ID);
-        UImod.deleteFromUI(itemID);
-        updateBudget(dataMod, UImod);
-        updatePercentages(dataMod, UImod);
     }
 
     var events = function () {
+        //event listeners
         document.querySelector(".add__btn").addEventListener('click', addItem);
         document.addEventListener('keypress', function (e) {
             if (e.keyCode === 13) {
