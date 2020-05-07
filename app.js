@@ -87,6 +87,7 @@ var UImodule = (function () {
         inputType: ".add__type",
         inputDesc: ".add__description",
         inputVal: ".add__value",
+        inputBtn: ".add__btn",
         exp: ".expenses__list",
         inc: ".income__list",
         budgetIncome: ".budget__income--value",
@@ -139,7 +140,7 @@ var UImodule = (function () {
             var inputItems, inputArray;
             inputItems = document.querySelectorAll(DOMclasses.inputVal + "," + DOMclasses.inputDesc);
             inputArray = Array.prototype.slice.call(inputItems);
-            inputArray.forEach(function (current, i, arr) {
+            inputArray.forEach(function (current) {
                 current.value = "";
             });
             inputArray[0].focus();
@@ -167,6 +168,15 @@ var UImodule = (function () {
             currentYear = now.getFullYear();
             currentMonth = now.getMonth();
             document.querySelector(DOMclasses.month).textContent = monthArray[currentMonth] + " " + currentYear;
+        },
+        changeFocus: function () {
+            var inputItems, inputArray;
+            inputItems = document.querySelectorAll(DOMclasses.inputVal + "," + DOMclasses.inputDesc + "," + DOMclasses.inputType);
+            inputArray = Array.prototype.slice.call(inputItems);
+            inputArray.forEach(function (curr) {
+                curr.classList.toggle("red-focus");
+            });
+            document.querySelector(DOMclasses.inputBtn).classList.add("red");
         }
     }
 })();
@@ -217,6 +227,7 @@ var controller = (function (dataMod, UImod) {
 
         })
         document.querySelector(".container").addEventListener("click", deleteItem);
+        document.querySelector(".add__type").addEventListener("change", UImod.changeFocus);
     }
     return {
         init: function () {
