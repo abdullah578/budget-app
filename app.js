@@ -3,7 +3,12 @@ var dataModule = (function () {
         this.description = description;
         this.value = value;
         this.id = id;
+        this.percentage = -1;
     };
+    Expense.prototype.calcPercentage = function (totalIncome) {
+        this.percentage = totalIncome > 0 ? Math.round((this.value / totalIncome) * 100) : -1;
+
+    }
     var Income = function (description, value, id) {
         this.description = description;
         this.value = value;
@@ -52,12 +57,25 @@ var dataModule = (function () {
             userData.budget = userData.totals.inc - userData.totals.exp;
             userData.percentage = userData.totals.inc > 0 ? Math.round((userData.totals.exp / userData.totals.inc) * 100) : -1;
         },
+        calculatePercentages: function () {
+            userData.items.exp.forEach(function (curr) {
+                curr.calcPercentage(userData.totals.inc);
+            });
+        },
         getBudget: function () {
             return {
                 budget: userData.budget,
                 percentage: userData.percentage,
                 total: userData.totals
             }
+        },
+        getPercentages: function () {
+            var percentageArray;
+            percentageArray = userData.items.exp.map(function (curr) {
+                console.log(curr.percentage);
+                return curr.percentage;
+            });
+            return percentageArray;
         }
 
     };
@@ -74,7 +92,8 @@ var UImodule = (function () {
         budgetIncome: ".budget__income--value",
         budgetExpense: ".budget__expenses--value",
         budgetExpensePercentage: ".budget__expenses--percentage",
-        budgetValue: ".budget__value"
+        budgetValue: ".budget__value",
+        percentages: ".item__percentage"
     };
     return {
         getInputData: function () {
@@ -117,18 +136,32 @@ var UImodule = (function () {
             document.querySelector(DOMclasses.budgetExpense).textContent = obj.total.exp;
             document.querySelector(DOMclasses.budgetExpensePercentage).textContent = obj.percentage > 0 ? obj.percentage + "%" : "-";
             document.querySelector(DOMclasses.budgetValue).textContent = obj.budget;
+        },
+        displayPercentages: function (perc) {
+            var inputItems, inputArray;
+            inputItems = document.querySelectorAll(DOMclasses.percentages);
+            inputArray = Array.prototype.slice.call(inputItems);
+            inputArray.forEach(function (elem, index) {
+                elem.textContent = perc[index] >= 0 ? perc[index] + "%" : "-";
+            });
         }
     }
 })();
-var updateBudget = function (dataMod, UImod) {
-    var budgetObj;
-    dataMod.calculateBudget();
-    budgetObj = dataMod.getBudget();
-    UImod.displayBudget(budgetObj);
-};
 
 var controller = (function (dataMod, UImod) {
-    var action = function () {
+    var updateBudget = function () {
+        var budgetObj;
+        dataMod.calculateBudget();
+        budgetObj = dataMod.getBudget();
+        UImod.displayBudget(budgetObj);
+    };
+    var updatePercentages = function () {
+        var percentages;
+        dataMod.calculatePercentages();
+        percentages = dataMod.getPercentages();
+        UImod.displayPercentages(percentages);
+    }
+    var addItem = function () {
         var userInput, newItem;
         userInput = UImod.getInputData();
         if (userInput.description !== "" && !isNaN(userInput.value) && userInput.value > 0) {
@@ -136,6 +169,7 @@ var controller = (function (dataMod, UImod) {
             UImod.addToUI(newItem, userInput.type);
             UImod.emptyFields();
             updateBudget(dataMod, UImod);
+            updatePercentages(dataMod, UImod);
         }
     }
     var deleteItem = function (e) {
@@ -148,13 +182,14 @@ var controller = (function (dataMod, UImod) {
         dataMod.removeItem(type, ID);
         UImod.deleteFromUI(itemID);
         updateBudget(dataMod, UImod);
+        updatePercentages(dataMod, UImod);
     }
 
     var events = function () {
-        document.querySelector(".add__btn").addEventListener('click', action);
+        document.querySelector(".add__btn").addEventListener('click', addItem);
         document.addEventListener('keypress', function (e) {
             if (e.keyCode === 13) {
-                action();
+                addItem();
             }
 
         })
