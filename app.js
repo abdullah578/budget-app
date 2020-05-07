@@ -65,6 +65,14 @@ var UImodule = (function () {
             newHTML = newHTML.replace('%value%', obj.value);
             document.querySelector(DOMclasses[type]).insertAdjacentHTML("beforeend", newHTML);
 
+        },
+        emptyFields: function () {
+            var inputItems, inputArray;
+            inputItems = document.querySelectorAll(DOMclasses.inputVal + "," + DOMclasses.inputDesc);
+            inputArray = Array.prototype.slice.call(inputItems);
+            inputArray.forEach(function (current, i, arr) {
+                current.value = "";
+            });
         }
     }
 })();
@@ -75,6 +83,7 @@ var controller = (function (dataMod, UImod) {
         userInput = UImod.getInputData();
         newItem = dataMod.addItem(userInput.type, userInput.description, userInput.value);
         UImod.addToUI(newItem, userInput.type);
+        UImod.emptyFields();
     }
 
     var events = function () {
