@@ -1,6 +1,5 @@
 # Budgety
-Budgety is a single page web application that helps users manage their income and expenses. This application was built using HTML5 CSS3 and ES5.
-
+Budgety is a web application built using HTML5 CSS3 and ES5 that helps users manage their income and expenses.
 ## User Interface
 
 ![Home Page](/ui.png)
